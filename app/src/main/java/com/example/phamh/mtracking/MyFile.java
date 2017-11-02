@@ -14,7 +14,7 @@ public class MyFile {
 
     }
 
-    public String readFile(String link) {
+    public String readFileText(String link) {
         try {
             BufferedReader br = new BufferedReader(new FileReader(link));
             StringBuilder sb = new StringBuilder();
