@@ -89,7 +89,6 @@ class MyGLSurfaceView extends GLSurfaceView {
 
             @Override
             public void onDrawFrame(GL10 gl ,boolean firstDraw) {
-                Log.i("MY_DEBUG", "opengles draw");
                 GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
                 gl.glMatrixMode(GL10.GL_MODELVIEW);
                 gl.glLoadIdentity();
@@ -172,7 +171,8 @@ class Plot {
     private void drawPlot2D(GL10 gl, float axis_z) {
         gl.glPushMatrix();
         gl.glTranslatef(0, 0, - axis_z);
-        gl.glScalef(0.5f*axis_z,0.5f*axis_z,1.0f);
+        gl.glScalef(axis_z,axis_z,1.0f);
+        drawGridPlot2D(gl,0.1f,0.1f);
         drawAxisPlot2D(gl);
         gl.glPopMatrix();
     }
@@ -185,67 +185,102 @@ class Plot {
         gl.glEnableClientState(GL10.GL_COLOR_ARRAY);
         gl.glVertexPointer(3, GL10.GL_FLOAT, 0, vertexBuffer);
         gl.glColorPointer(4, GL10.GL_FLOAT, 0, colorBuffer);
+        gl.glLineWidth(4.0f);
         gl.glDrawArrays(GL10.GL_LINES,0,4);
         gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
         gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
     }
 
     private void drawGridPlot2D(GL10 gl,float step_x, float step_y) {
-        ArrayList<Float> lines = new ArrayList<>();
-        ArrayList<Float> colors = new ArrayList<>();
+        ByteBuffer vbb = ByteBuffer.allocateDirect(3000 * 4);
+        vbb.order(ByteOrder.nativeOrder());
+        ByteBuffer cbb = ByteBuffer.allocateDirect(4000 * 4);
+        cbb.order(ByteOrder.nativeOrder());
+        vertexBuffer = vbb.asFloatBuffer();
+        colorBuffer = cbb.asFloatBuffer();
         float temp_value = 0.0f;
-        for(temp_value = 0.0f; temp_value < 1.0f; temp_value += step_y) {
-            lines.add(-limit);
-            lines.add(temp_value);
-            lines.add(0.0f);
-            lines.add(limit);
-            lines.add(temp_value);
-            lines.add(0.0f);
-            lines.add(-limit);
-            lines.add(-temp_value);
-            lines.add(0.0f);
-            lines.add(limit);
-            lines.add(-temp_value);
-            lines.add(0.0f);
-            colors.add(0.25f);
-            colors.add(0.25f);
-            colors.add(0.25f);
-            colors.add(1.0f);
-            colors.add(0.25f);
-            colors.add(0.25f);
-            colors.add(0.25f);
-            colors.add(1.0f);
-        }
-        for(temp_value = 0.0f; temp_value < limit; temp_value += step_x) {
-            lines.add(temp_value);
-            lines.add(-limit);
-            lines.add(0.0f);
-            lines.add(temp_value);
-            lines.add(limit);
-            lines.add(0.0f);
-            lines.add(-temp_value);
-            lines.add(-limit);
-            lines.add(0.0f);
-            lines.add(temp_value);
-            lines.add(limit);
-            lines.add(0.0f);
-            colors.add(0.25f);
-            colors.add(0.25f);
-            colors.add(0.25f);
-            colors.add(1.0f);
-            colors.add(0.25f);
-            colors.add(0.25f);
-            colors.add(0.25f);
-            colors.add(1.0f);
+        for(temp_value = 0.0f; temp_value <= 1.0f; temp_value += step_y) {
+            vertexBuffer.put(-limit);
+            vertexBuffer.put(temp_value);
+            vertexBuffer.put(0.0f);
+            vertexBuffer.put(limit);
+            vertexBuffer.put(temp_value);
+            vertexBuffer.put(0.0f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            vertexBuffer.put(-limit);
+            vertexBuffer.put(-temp_value);
+            vertexBuffer.put(0.0f);
+            vertexBuffer.put(limit);
+            vertexBuffer.put(-temp_value);
+            vertexBuffer.put(0.0f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
         }
 
-        gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-        gl.glEnableClientState(GL10.GL_COLOR_ARRAY);
-        gl.glVertexPointer(3, GL10.GL_FLOAT, 0, vertexBuffer);
-        gl.glColorPointer(4, GL10.GL_FLOAT, 0, colorBuffer);
-        gl.glDrawArrays(GL10.GL_LINES,0,4);
-        gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-        gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
+        for(temp_value = 0.0f; temp_value <= limit; temp_value += step_x) {
+            vertexBuffer.put(temp_value);
+            vertexBuffer.put(-1.0f);
+            vertexBuffer.put(0.0f);
+            vertexBuffer.put(temp_value);
+            vertexBuffer.put(1.0f);
+            vertexBuffer.put(0.0f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            vertexBuffer.put(-temp_value);
+            vertexBuffer.put(-1.0f);
+            vertexBuffer.put(0.0f);
+            vertexBuffer.put(-temp_value);
+            vertexBuffer.put(1.0f);
+            vertexBuffer.put(0.0f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+            colorBuffer.put(0.5f);
+        }
+        int t_size_1 = vertexBuffer.position();
+        int t_size_2 = colorBuffer.position();
+        int size = t_size_2>>2;
+        if(t_size_1/3 == size) {
+            vertexBuffer.position(0);
+            colorBuffer.position(0);
+            gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
+            gl.glEnableClientState(GL10.GL_COLOR_ARRAY);
+            gl.glVertexPointer(3, GL10.GL_FLOAT, 0, vertexBuffer);
+            gl.glColorPointer(4, GL10.GL_FLOAT, 0, colorBuffer);
+            gl.glLineWidth(1.0f);
+            gl.glDrawArrays(GL10.GL_LINES,0,size);
+            gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+            gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
+        }
+        vbb.clear();
+        vbb = null;
+        cbb.clear();
+        cbb = null;
+        vertexBuffer.clear();
+        colorBuffer.clear();
     }
 
     private void loadData(float vertices[], float colors[]) {
