@@ -1,31 +1,44 @@
 package com.example.phamh.mtracking;
 
-import android.app.ActivityManager;
-import android.content.Context;
-import android.content.pm.ConfigurationInfo;
-import android.opengl.GLSurfaceView;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.SurfaceView;
-import android.view.View;
-import android.widget.LinearLayout;
+
 
 public class MainActivity extends AppCompatActivity {
 
     private IMU imu;
     private MyGLView mDisplay;
     private MyGLSurfaceView mGLView;
+
+    Handler mHandler;
+    Handler mPlotHandler;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //setContentView(R.layout.activity_main);
-        //LinearLayout layout = (LinearLayout)findViewById(R.id.OpenGLES);
-        //mDisplay = new MyGLView(this, layout);
-        //imu = new IMU(this,null);
-        //SurfaceView surfaceView = (SurfaceView) findViewById(R.id.surfaceView);
         mGLView = new MyGLSurfaceView(this);
+        mPlotHandler = mGLView.getHandler();
         setContentView(mGLView);
+        mHandler = new Handler() {
+            @Override
+            public void handleMessage(Message inputMessage) {
+                if(inputMessage.obj.getClass().equals(MyDataTranfer.class)) {
+                    MyDataTranfer myDataTranfer = (MyDataTranfer)inputMessage.obj;
+                    if(myDataTranfer.type == IMU.IMU_DATA_ACC) {
+                        Double[] mTemp = (Double[])myDataTranfer.data;
+                        MyDataTranfer mDataTranfer = new MyDataTranfer();
+                        mDataTranfer.type = 1;
+                        mDataTranfer.data = mTemp[0];
+                        Message mgs = mPlotHandler.obtainMessage();
+                        mgs.obj = mDataTranfer;
+                        mPlotHandler.sendMessage(mgs);
+                    }
+                }
+            }
+        };
+        imu = new IMU(this, mHandler);
     }
 
     @Override
@@ -33,14 +46,14 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         //mDisplay.onResume();
         mGLView.onResume();
-        //imu.start();
+        imu.start();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         //mDisplay.onPause();
-        //imu.stop();
         mGLView.onPause();
+        imu.stop();
     }
 }

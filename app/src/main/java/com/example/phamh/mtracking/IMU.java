@@ -16,12 +16,12 @@ import android.util.Log;
  */
 
 public class IMU {
-    public final int IMU_DATA_ANGLE_X = 1;
-    public final int IMU_DATA_ANGLE_Y = 2;
-    public final int IMU_DATA_ANGLE_Z = 3;
-    private final int RAW_DATA_ACC = 1000;
-    private final int RAW_DATA_COMP = 1001;
-    private final int RAW_DATA_GYRO = 1002;
+    public static final int IMU_DATA_ACC = 1;
+    public final int IMU_DATA_ACC_Y = 2;
+    public final int IMU_DATA_ACC_Z = 3;
+    private static final int RAW_DATA_ACC = 1000;
+    private static final int RAW_DATA_COMP = 1001;
+    private static final int RAW_DATA_GYRO = 1002;
 
     private Handler mHandlerTranferData;
     private Context mContext;
@@ -88,7 +88,7 @@ public class IMU {
     };
 
     ReadRawSensor readRawSensor;
-    public IMU(Context mContext, Handler mHander) {
+    public IMU(Context mContext, final Handler mHander) {
         this.mHandlerTranferData = mHander;
         this.mContext = mContext;
 
@@ -154,6 +154,14 @@ public class IMU {
                             rawDataAcc[0] = mTemp[0];
                             rawDataAcc[1] = mTemp[1];
                             rawDataAcc[2] = mTemp[2];
+                            if(mHandlerTranferData != null) {
+                                MyDataTranfer m_data = new MyDataTranfer();
+                                m_data.type = IMU_DATA_ACC;
+                                m_data.data = mTemp;
+                                Message msg = mHandlerTranferData.obtainMessage();
+                                msg.obj = m_data;
+                                mHandlerTranferData.sendMessage(msg);
+                            }
                             Log.i("MY_ACC", String.format("X = %2.3f - Y = %2.3f - Z = %2.3f",rawDataAcc[0],rawDataAcc[1],rawDataAcc[2]));
                         }
                     } else if(myDataTranfer.type == RAW_DATA_COMP) {
@@ -182,15 +190,15 @@ public class IMU {
 
     public void start() {
         if(mAcc != null) {
-            sensorManager.registerListener(readRawSensor,mAcc,100000,100);
+            sensorManager.registerListener(readRawSensor,mAcc,10000,100);
         }
 
         if(mComp != null) {
-            sensorManager.registerListener(readRawSensor,mComp,100000,100);
+            sensorManager.registerListener(readRawSensor,mComp,10000,100);
         }
 
         if(mGyro != null) {
-            sensorManager.registerListener(readRawSensor,mGyro,100000,100);
+            sensorManager.registerListener(readRawSensor,mGyro,10000,100);
         }
 
     }
