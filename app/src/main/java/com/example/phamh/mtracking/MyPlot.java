@@ -34,7 +34,6 @@ public class MyPlot {
 
     private short[] indices = { 0, 1, 2, 0, 2, 3 };
 
-    private FloatBuffer vertexBuffer;
     private FloatBuffer colorBuffer;
     private ShortBuffer indexBuffer;
     private FloatBuffer dataChannel1;
@@ -56,172 +55,119 @@ public class MyPlot {
     }
 
     private void drawPlot2D(GL10 gl, float axis_z) {
+        //Log.i("MY_DEBUG", "begin draw plot");
         gl.glPushMatrix();
         gl.glTranslatef(0, 0, - axis_z);
         gl.glScalef(axis_z,axis_z,1.0f);
-        drawGridPlot2D(gl,0.1f,0.1f);
-        drawAxisPlot2D(gl);
-        drawChannelPlot2D(gl);
+        drawAxisGridPlot2D(gl,0.1f,0.1f, 1.0f,1.0f,1.0f);
+        drawChannelPlot2D(gl,myStore.getData("RAW_ACC_X"),1.0f,0.0f,1.0f,0.0f,0.0f,0.5f);
+        drawChannelPlot2D(gl,myStore.getData("RAW_ACC_Y"),1.0f,0.0f,0.0f,1.0f,0.0f,0.5f);
+        drawChannelPlot2D(gl,myStore.getData("RAW_ACC_Z"),0.1f,0.0f,0.0f,0.0f,1.0f,0.5f);
+        //drawChannelPlot2D(gl,myStore.getData("RAW_ACC_Z"),0.0f,0.0f,1.0f,0.5f);
+        //Log.i("MY_DEBUG", "finish draw plot");
         gl.glPopMatrix();
     }
 
-    private void drawAxisPlot2D(GL10 gl) {
-        float vertices_axis[] = {-limit,0,0, limit,0,0,0,-1,0, 0,1,0};
-        float colors_axis[] = {1.0f,1.0f,1.0f,1.0f,1.0f,1.0f,1.0f,1.0f,1.0f,1.0f,1.0f,1.0f,1.0f,1.0f,1.0f,1.0f};
-        loadData(vertices_axis,colors_axis);
-        gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-        gl.glEnableClientState(GL10.GL_COLOR_ARRAY);
-        gl.glVertexPointer(3, GL10.GL_FLOAT, 0, vertexBuffer);
-        gl.glColorPointer(4, GL10.GL_FLOAT, 0, colorBuffer);
-        gl.glLineWidth(4.0f);
-        gl.glDrawArrays(GL10.GL_LINES,0,4);
-        gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-        gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
-    }
-
-    private void drawGridPlot2D(GL10 gl,float step_x, float step_y) {
-        ByteBuffer vbb = ByteBuffer.allocateDirect(3000 * 4);
+    private void drawAxisGridPlot2D(GL10 gl,float step_x, float step_y, float red, float green, float blue) {
+        //Log.i("MY_DEBUG", "begin draw axis & grid plot");
+        int m_size_x, m_size_y;
+        m_size_x = (int)(limit/step_x);
+        m_size_y = (int)(1.0f/step_y);
+        //Log.i("MY_DEBUG", String.format("Size x : %d - Size y : %d - Limit = %f",m_size_x,m_size_y,limit));
+        ByteBuffer vbb = ByteBuffer.allocateDirect((m_size_y  + m_size_x - 1)*48);
         vbb.order(ByteOrder.nativeOrder());
-        ByteBuffer cbb = ByteBuffer.allocateDirect(4000 * 4);
-        cbb.order(ByteOrder.nativeOrder());
+        FloatBuffer vertexBuffer;
         vertexBuffer = vbb.asFloatBuffer();
-        colorBuffer = cbb.asFloatBuffer();
         float temp_value = 0.0f;
-        for(temp_value = 0.0f; temp_value <= 1.0f; temp_value += step_y) {
+        int index = 0;
+        for(index = 1; index < m_size_y; index++) {
+            temp_value = step_y*(float)index;
             vertexBuffer.put(-limit);
             vertexBuffer.put(temp_value);
             vertexBuffer.put(0.0f);
             vertexBuffer.put(limit);
             vertexBuffer.put(temp_value);
             vertexBuffer.put(0.0f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
             vertexBuffer.put(-limit);
             vertexBuffer.put(-temp_value);
             vertexBuffer.put(0.0f);
             vertexBuffer.put(limit);
             vertexBuffer.put(-temp_value);
             vertexBuffer.put(0.0f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
+        }
+        //Log.i("MY_DEBUG", String.format("Index : %d",vertexBuffer.position()));
+
+        for(index = 1; index < m_size_x; index++) {
+            temp_value = step_x*(float)index;
+            vertexBuffer.put(temp_value);
+            vertexBuffer.put(-1.0f);
+            vertexBuffer.put(0.0f);
+            vertexBuffer.put(temp_value);
+            vertexBuffer.put(1.0f);
+            vertexBuffer.put(0.0f);
+            vertexBuffer.put(-temp_value);
+            vertexBuffer.put(-1.0f);
+            vertexBuffer.put(0.0f);
+            vertexBuffer.put(-temp_value);
+            vertexBuffer.put(1.0f);
+            vertexBuffer.put(0.0f);
         }
 
-        for(temp_value = 0.0f; temp_value <= limit; temp_value += step_x) {
-            vertexBuffer.put(temp_value);
-            vertexBuffer.put(-1.0f);
-            vertexBuffer.put(0.0f);
-            vertexBuffer.put(temp_value);
-            vertexBuffer.put(1.0f);
-            vertexBuffer.put(0.0f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            vertexBuffer.put(-temp_value);
-            vertexBuffer.put(-1.0f);
-            vertexBuffer.put(0.0f);
-            vertexBuffer.put(-temp_value);
-            vertexBuffer.put(1.0f);
-            vertexBuffer.put(0.0f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-            colorBuffer.put(0.5f);
-        }
-        int t_size_1 = vertexBuffer.position();
-        int t_size_2 = colorBuffer.position();
-        int size = t_size_2>>2;
-        if(t_size_1/3 == size) {
-            vertexBuffer.position(0);
-            colorBuffer.position(0);
-            gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-            gl.glEnableClientState(GL10.GL_COLOR_ARRAY);
-            gl.glVertexPointer(3, GL10.GL_FLOAT, 0, vertexBuffer);
-            gl.glColorPointer(4, GL10.GL_FLOAT, 0, colorBuffer);
-            gl.glLineWidth(1.0f);
-            gl.glDrawArrays(GL10.GL_LINES,0,size);
-            gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-            gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
-        }
+        //Log.i("MY_DEBUG", String.format("Index : %d",vertexBuffer.position()));
+
+        vertexBuffer.put(0);
+        vertexBuffer.put(-1.0f);
+        vertexBuffer.put(0.0f);
+        vertexBuffer.put(0);
+        vertexBuffer.put(1.0f);
+        vertexBuffer.put(0.0f);
+        vertexBuffer.put(-limit);
+        vertexBuffer.put(0);
+        vertexBuffer.put(0.0f);
+        vertexBuffer.put(limit);
+        vertexBuffer.put(0.0f);
+        vertexBuffer.put(0.0f);
+        //Log.i("MY_DEBUG", String.format("Index : %d",vertexBuffer.position()));
+
+        vertexBuffer.position(0);
+        gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
+        gl.glVertexPointer(3, GL10.GL_FLOAT, 0, vertexBuffer);
+        gl.glLineWidth(1.0f);
+        gl.glColor4f(red,green,blue,0.5f);
+        gl.glDrawArrays(GL10.GL_LINES,0,4*(m_size_y+m_size_x-2));
+        vertexBuffer.position(0);
+        gl.glLineWidth(3.0f);
+        gl.glColor4f(red,green,blue,1.0f);
+        gl.glDrawArrays(GL10.GL_LINES,4*(m_size_y + m_size_x - 2),4);
+        gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
         vbb.clear();
-        vbb = null;
-        cbb.clear();
-        cbb = null;
         vertexBuffer.clear();
-        colorBuffer.clear();
+        //Log.i("MY_DEBUG", "finish draw axis & grid plot");
     }
 
-    private void drawChannelPlot2D(GL10 gl) {
-        int m_limit = dataChannel1.position();
+    private void drawChannelPlot2D(GL10 gl, MyData mBuf, float scale, float offset,float red, float green, float blue,float optical) {
+        int m_limit = mBuf.getSize();
         ByteBuffer vbb = ByteBuffer.allocateDirect(3*m_limit * 4);
         vbb.order(ByteOrder.nativeOrder());
+        FloatBuffer vertexBuffer;
         vertexBuffer = vbb.asFloatBuffer();
         vertexBuffer.position(0);
-        int offset = sample/2;
-        //Log.i("MY_DEBUG", "abc");
+        int m_offset = m_limit/2;
         for(int i = 0; i < m_limit; i++) {
-            vertexBuffer.put(((float)(i - offset))*limit/((float)offset));
-            vertexBuffer.put(dataChannel1.get(i)/10.0f);
+            vertexBuffer.put(((float)(i - m_offset))*limit/((float)m_offset));
+            vertexBuffer.put(scale*mBuf.get(i)+offset);
             vertexBuffer.put(0.0f);
         }
         vertexBuffer.position(0);
         gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
         gl.glVertexPointer(3, GL10.GL_FLOAT, 0, vertexBuffer);
         gl.glLineWidth(1.0f);
-        gl.glColor4f(1.0f,0.0f,0.0f,1.0f);
+        gl.glColor4f(red,green,blue,optical);
         gl.glDrawArrays(GL10.GL_LINE_STRIP,0,m_limit);
         gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
         vbb.clear();
         vertexBuffer.clear();
         dataChannel1.position(m_limit);
-        //Log.i("MY_DEBUG", String.format("pos : %d",m_limit));
-    }
-
-    private void loadData(float vertices[], float colors[]) {
-        ByteBuffer vbb = ByteBuffer.allocateDirect(vertices.length * 4);
-        vbb.order(ByteOrder.nativeOrder());
-        vertexBuffer = vbb.asFloatBuffer();
-        vertexBuffer.put(vertices);
-        vertexBuffer.position(0);
-
-        ByteBuffer cbb = ByteBuffer.allocateDirect(colors.length * 4);
-        cbb.order(ByteOrder.nativeOrder());
-        colorBuffer = cbb.asFloatBuffer();
-        colorBuffer.put(colors);
-        colorBuffer.position(0);
-    }
-
-    public void addDataChannel1(float mData) {
-        if(dataChannel1.position() < sample) {
-            dataChannel1.put(mData);
-        } else {
-            dataChannel1.position(0);
-            for (int i = 0; i < (sample - 1); i++) {
-                dataChannel1.put(i,dataChannel1.get(i+1));
-            }
-            dataChannel1.put(sample -1,mData);
-            dataChannel1.position(sample);
-        }
     }
 
     public void addStore(MyStore mStore) {

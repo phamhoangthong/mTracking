@@ -41,7 +41,6 @@ public class MyGLView {
         }
         mGLView = new GLSurfaceView(mContext);
         mLayout.addView(mGLView,new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        Log.i("MY_DEBUG", "abc");
     }
 
     public void onResume() {
@@ -94,7 +93,7 @@ class MyGLSurfaceView extends GLSurfaceView {
             @Override
 
             public void onDrawFrame(GL10 gl ,boolean firstDraw) {
-                Log.i("MY_DEBUG", "render");
+                //Log.i("MY_DEBUG", "render");
                 GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
                 gl.glMatrixMode(GL10.GL_MODELVIEW);
                 gl.glLoadIdentity();
@@ -111,8 +110,7 @@ class MyGLSurfaceView extends GLSurfaceView {
                 if(inputMessage.obj.getClass().equals(MyDataTranfer.class)) {
                     MyDataTranfer myDataTranfer = (MyDataTranfer)inputMessage.obj;
                     if(myDataTranfer.type == 1) {
-                        Double mTemp = (Double)myDataTranfer.data;
-                        m_plot.addDataChannel1((float) mTemp.doubleValue());
+                        //requestRender();
                         count++;
                         if(count >= 10) {
                             count = 1;

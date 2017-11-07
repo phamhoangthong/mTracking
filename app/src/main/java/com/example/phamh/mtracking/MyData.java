@@ -13,6 +13,10 @@ public class MyData {
     private int mSize;
     private String mTag;
 
+    public MyData() {
+
+    }
+
     public MyData(String name, int size) {
         mTag = name;
         init(size);
@@ -22,7 +26,7 @@ public class MyData {
         mSize = size;
         ByteBuffer tbb = ByteBuffer.allocateDirect(mSize * Float.BYTES);
         tbb.order(ByteOrder.nativeOrder());
-        data.clear();
+        //data.clear();
         data = tbb.asFloatBuffer();
         data.position(0);
     }

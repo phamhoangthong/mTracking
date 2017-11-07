@@ -114,6 +114,7 @@ public class IMU {
             if(inputMessage.obj.getClass().equals(MyDataTranfer.class)) {
                 MyDataTranfer myDataTranfer = (MyDataTranfer)inputMessage.obj;
                 if(myDataTranfer.type == RAW_DATA_ACC) {
+                    //Log.i("MY_DEBUG","Have data acc");
                     Double[] mTemp = (Double[])myDataTranfer.data;
                     if(mTemp.length == 3) {
                         rawDataAcc[0] = mTemp[0];
@@ -122,6 +123,7 @@ public class IMU {
                         myStore.push("RAW_ACC_X", (float)mTemp[0].doubleValue());
                         myStore.push("RAW_ACC_Y", (float)mTemp[1].doubleValue());
                         myStore.push("RAW_ACC_Z", (float)mTemp[2].doubleValue());
+                        //Log.i("MY_DEBUG","Pushed data acc");
                         if(mHandlerTranferData != null) {
                             MyDataTranfer m_data = new MyDataTranfer();
                             m_data.type = IMU_DATA_ACC;

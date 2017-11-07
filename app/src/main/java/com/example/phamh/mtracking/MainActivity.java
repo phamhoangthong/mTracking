@@ -2,6 +2,7 @@ package com.example.phamh.mtracking;
 
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -20,25 +21,27 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //Log.i("MY_DEBUG","Begin program");
         myStore = new MyStore();
-        myStore.data.add(new MyData("RAW_ACC_X", 100));
-        myStore.data.add(new MyData("RAW_ACC_Y", 100));
-        myStore.data.add(new MyData("RAW_ACC_Z", 100));
-        myStore.data.add(new MyData("RAW_COMP_X", 100));
-        myStore.data.add(new MyData("RAW_COMP_Y", 100));
-        myStore.data.add(new MyData("RAW_COMP_Z", 100));
-        myStore.data.add(new MyData("RAW_GYRO_X", 100));
-        myStore.data.add(new MyData("RAW_GYRO_Y", 100));
-        myStore.data.add(new MyData("RAW_GYRO_Z", 100));
-        myStore.data.add(new MyData("ACC_X", 100));
-        myStore.data.add(new MyData("ACC_Y", 100));
-        myStore.data.add(new MyData("ACC_Z", 100));
-        myStore.data.add(new MyData("COMP_X", 100));
-        myStore.data.add(new MyData("COMP_Y", 100));
-        myStore.data.add(new MyData("COMP_Z", 100));
-        myStore.data.add(new MyData("GYRO_X", 100));
-        myStore.data.add(new MyData("GYRO_Y", 100));
-        myStore.data.add(new MyData("GYRO_Z", 100));
+        myStore.add("RAW_ACC_X", 100);
+        myStore.add("RAW_ACC_Y", 100);
+        myStore.add("RAW_ACC_Z", 100);
+        myStore.add("RAW_COMP_X", 100);
+        myStore.add("RAW_COMP_Y", 100);
+        myStore.add("RAW_COMP_Z", 100);
+        myStore.add("RAW_GYRO_X", 100);
+        myStore.add("RAW_GYRO_Y", 100);
+        myStore.add("RAW_GYRO_Z", 100);
+        myStore.add("ACC_X", 100);
+        myStore.add("ACC_Y", 100);
+        myStore.add("ACC_Z", 100);
+        myStore.add("COMP_X", 100);
+        myStore.add("COMP_Y", 100);
+        myStore.add("COMP_Z", 100);
+        myStore.add("GYRO_X", 100);
+        myStore.add("GYRO_Y", 100);
+        myStore.add("GYRO_Z", 100);
+        //Log.i("MY_DEBUG","Created store data");
 
         mGLView = new MyGLSurfaceView(this);
         mGLView.setData(myStore);
@@ -50,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
                 if(inputMessage.obj.getClass().equals(MyDataTranfer.class)) {
                     MyDataTranfer myDataTranfer = (MyDataTranfer)inputMessage.obj;
                     if(myDataTranfer.type == IMU.IMU_DATA_ACC) {
+                        //Log.i("MY_DEBUG","Haved data acc to plot");
                         Double[] mTemp = (Double[])myDataTranfer.data;
                         MyDataTranfer mDataTranfer = new MyDataTranfer();
                         mDataTranfer.type = 1;

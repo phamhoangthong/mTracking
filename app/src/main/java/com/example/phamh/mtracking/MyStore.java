@@ -10,7 +10,7 @@ public class MyStore {
     public ArrayList<MyData> data;
 
     public MyStore() {
-        data = new ArrayList<MyData>();
+        data = new ArrayList<>();
     }
 
     public void push(String name, float mdata) {
@@ -19,5 +19,21 @@ public class MyStore {
                 mData.push(mdata);
             }
         }
+    }
+
+    public MyData getData(String name){
+        for (MyData mData: data) {
+            if(mData.getName().equals(name)) {
+                return mData;
+            }
+        }
+        return null;
+    }
+
+    public void add(String name, int size){
+        MyData myData = new MyData();
+        this.data.add(myData);
+        myData.setName(name);
+        myData.init(size);
     }
 }
