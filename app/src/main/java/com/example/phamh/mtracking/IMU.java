@@ -11,6 +11,10 @@ import android.os.Message;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+
 /**
  * Created by phamh on 11/1/2017.
  */
@@ -22,19 +26,9 @@ public class IMU {
     private static final int RAW_DATA_ACC = 1000;
     private static final int RAW_DATA_COMP = 1001;
     private static final int RAW_DATA_GYRO = 1002;
-
-    private Handler mHandlerTranferData;
-    private Context mContext;
-    private SensorManager sensorManager;
-    private Sensor mAcc;
-    private Sensor mComp;
-    private Sensor mGyro;
-
-    private Double[] rawDataAcc;
-    private Double[] rawDataComp;
-    private Double[] rawDataGyro;
-
-    Handler mHandlerRawSensor;
+    private static final int BUFFER_SIZE = 1000;
+    private static final int FILTER_SIZE = 10;
+    private MyStore myStore;
 
     private class ReadRawSensor implements SensorEventListener {
         private Handler mHander;
@@ -87,10 +81,89 @@ public class IMU {
         }
     };
 
+    /*private class FilterMean {
+        public FilterMean() {
+
+        }
+
+        public float filter(FloatBuffer input, FloatBuffer output, int size_filter) {
+            int index_input = input.position();
+            int index_output = output.position();
+            if(index_input >= size_filter) {
+
+            } else {
+                
+            }
+        }
+    }*/
+
+    private Handler mHandlerTranferData;
+    private Context mContext;
+    private SensorManager sensorManager;
+    private Sensor mAcc;
+    private Sensor mComp;
+    private Sensor mGyro;
+
+    private Double[] rawDataAcc;
+    private Double[] rawDataComp;
+    private Double[] rawDataGyro;
+
+    Handler mHandlerRawSensor = new Handler() {
+        @Override
+        public void handleMessage(Message inputMessage) {
+            if(inputMessage.obj.getClass().equals(MyDataTranfer.class)) {
+                MyDataTranfer myDataTranfer = (MyDataTranfer)inputMessage.obj;
+                if(myDataTranfer.type == RAW_DATA_ACC) {
+                    Double[] mTemp = (Double[])myDataTranfer.data;
+                    if(mTemp.length == 3) {
+                        rawDataAcc[0] = mTemp[0];
+                        rawDataAcc[1] = mTemp[1];
+                        rawDataAcc[2] = mTemp[2];
+                        myStore.push("RAW_ACC_X", (float)mTemp[0].doubleValue());
+                        myStore.push("RAW_ACC_Y", (float)mTemp[1].doubleValue());
+                        myStore.push("RAW_ACC_Z", (float)mTemp[2].doubleValue());
+                        if(mHandlerTranferData != null) {
+                            MyDataTranfer m_data = new MyDataTranfer();
+                            m_data.type = IMU_DATA_ACC;
+                            m_data.data = mTemp;
+                            Message msg = mHandlerTranferData.obtainMessage();
+                            msg.obj = m_data;
+                            mHandlerTranferData.sendMessage(msg);
+                        }
+                        //Log.i("MY_ACC", String.format("X = %2.3f - Y = %2.3f - Z = %2.3f",rawDataAcc[0],rawDataAcc[1],rawDataAcc[2]));
+                    }
+                } else if(myDataTranfer.type == RAW_DATA_COMP) {
+                    Double[] mTemp = (Double[])myDataTranfer.data;
+                    if(mTemp.length == 3) {
+                        rawDataComp[0] = mTemp[0];
+                        rawDataComp[1] = mTemp[1];
+                        rawDataComp[2] = mTemp[2];
+                        myStore.push("RAW_COMP_X", (float)mTemp[0].doubleValue());
+                        myStore.push("RAW_COMP_Y", (float)mTemp[1].doubleValue());
+                        myStore.push("RAW_COMP_Z", (float)mTemp[2].doubleValue());
+                        //Log.i("MY_COMP", String.format("X = %2.3f - Y = %2.3f - Z = %2.3f",rawDataComp[0],rawDataComp[1],rawDataComp[2]));
+                    }
+                } else if(myDataTranfer.type == RAW_DATA_GYRO) {
+                    Double[] mTemp = (Double[])myDataTranfer.data;
+                    if(mTemp.length == 3) {
+                        rawDataGyro[0] = mTemp[0];
+                        rawDataGyro[1] = mTemp[1];
+                        rawDataGyro[2] = mTemp[2];
+                        myStore.push("RAW_GYRO_X", (float)mTemp[0].doubleValue());
+                        myStore.push("RAW_GYRO_Y", (float)mTemp[1].doubleValue());
+                        myStore.push("RAW_GYRO_Z", (float)mTemp[2].doubleValue());
+                        //Log.i("MY_GYRO", String.format("X = %2.3f - Y = %2.3f - Z = %2.3f",rawDataGyro[0],rawDataGyro[1],rawDataGyro[2]));
+                    }
+                }
+            }
+        }
+    };
+
     ReadRawSensor readRawSensor;
-    public IMU(Context mContext, final Handler mHander) {
+    public IMU(Context mContext, final Handler mHander, MyStore mStore) {
         this.mHandlerTranferData = mHander;
         this.mContext = mContext;
+        this.myStore = mStore;
 
         rawDataAcc = new Double[3];
         rawDataComp = new Double[3];
@@ -142,48 +215,6 @@ public class IMU {
             AlertDialog mAlert = mBuilder.create();
             mAlert.show();
         }
-
-        mHandlerRawSensor = new Handler() {
-            @Override
-            public void handleMessage(Message inputMessage) {
-                if(inputMessage.obj.getClass().equals(MyDataTranfer.class)) {
-                    MyDataTranfer myDataTranfer = (MyDataTranfer)inputMessage.obj;
-                    if(myDataTranfer.type == RAW_DATA_ACC) {
-                        Double[] mTemp = (Double[])myDataTranfer.data;
-                        if(mTemp.length == 3) {
-                            rawDataAcc[0] = mTemp[0];
-                            rawDataAcc[1] = mTemp[1];
-                            rawDataAcc[2] = mTemp[2];
-                            if(mHandlerTranferData != null) {
-                                MyDataTranfer m_data = new MyDataTranfer();
-                                m_data.type = IMU_DATA_ACC;
-                                m_data.data = mTemp;
-                                Message msg = mHandlerTranferData.obtainMessage();
-                                msg.obj = m_data;
-                                mHandlerTranferData.sendMessage(msg);
-                            }
-                            Log.i("MY_ACC", String.format("X = %2.3f - Y = %2.3f - Z = %2.3f",rawDataAcc[0],rawDataAcc[1],rawDataAcc[2]));
-                        }
-                    } else if(myDataTranfer.type == RAW_DATA_COMP) {
-                        Double[] mTemp = (Double[])myDataTranfer.data;
-                        if(mTemp.length == 3) {
-                            rawDataComp[0] = mTemp[0];
-                            rawDataComp[1] = mTemp[1];
-                            rawDataComp[2] = mTemp[2];
-                            Log.i("MY_COMP", String.format("X = %2.3f - Y = %2.3f - Z = %2.3f",rawDataComp[0],rawDataComp[1],rawDataComp[2]));
-                        }
-                    } else if(myDataTranfer.type == RAW_DATA_GYRO) {
-                        Double[] mTemp = (Double[])myDataTranfer.data;
-                        if(mTemp.length == 3) {
-                            rawDataGyro[0] = mTemp[0];
-                            rawDataGyro[1] = mTemp[1];
-                            rawDataGyro[2] = mTemp[2];
-                            Log.i("MY_GYRO", String.format("X = %2.3f - Y = %2.3f - Z = %2.3f",rawDataGyro[0],rawDataGyro[1],rawDataGyro[2]));
-                        }
-                    }
-                }
-            }
-        };
 
         readRawSensor = new ReadRawSensor(mHandlerRawSensor);
     }

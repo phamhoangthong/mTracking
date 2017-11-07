@@ -12,13 +12,36 @@ public class MainActivity extends AppCompatActivity {
     private MyGLView mDisplay;
     private MyGLSurfaceView mGLView;
 
-    Handler mHandler;
-    Handler mPlotHandler;
+    private Handler mHandler;
+    private Handler mPlotHandler;
+
+    public MyStore myStore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        myStore = new MyStore();
+        myStore.data.add(new MyData("RAW_ACC_X", 100));
+        myStore.data.add(new MyData("RAW_ACC_Y", 100));
+        myStore.data.add(new MyData("RAW_ACC_Z", 100));
+        myStore.data.add(new MyData("RAW_COMP_X", 100));
+        myStore.data.add(new MyData("RAW_COMP_Y", 100));
+        myStore.data.add(new MyData("RAW_COMP_Z", 100));
+        myStore.data.add(new MyData("RAW_GYRO_X", 100));
+        myStore.data.add(new MyData("RAW_GYRO_Y", 100));
+        myStore.data.add(new MyData("RAW_GYRO_Z", 100));
+        myStore.data.add(new MyData("ACC_X", 100));
+        myStore.data.add(new MyData("ACC_Y", 100));
+        myStore.data.add(new MyData("ACC_Z", 100));
+        myStore.data.add(new MyData("COMP_X", 100));
+        myStore.data.add(new MyData("COMP_Y", 100));
+        myStore.data.add(new MyData("COMP_Z", 100));
+        myStore.data.add(new MyData("GYRO_X", 100));
+        myStore.data.add(new MyData("GYRO_Y", 100));
+        myStore.data.add(new MyData("GYRO_Z", 100));
+
         mGLView = new MyGLSurfaceView(this);
+        mGLView.setData(myStore);
         mPlotHandler = mGLView.getHandler();
         setContentView(mGLView);
         mHandler = new Handler() {
@@ -38,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
-        imu = new IMU(this, mHandler);
+        imu = new IMU(this, mHandler, myStore);
     }
 
     @Override

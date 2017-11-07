@@ -15,6 +15,7 @@ import javax.microedition.khronos.opengles.GL10;
  */
 
 public class MyPlot {
+    private MyStore myStore;
     private float vertices[] = {
             -1.0f,  1.0f, -1.0f,
             -1.0f, -1.0f, -5.0f,
@@ -221,5 +222,9 @@ public class MyPlot {
             dataChannel1.put(sample -1,mData);
             dataChannel1.position(sample);
         }
+    }
+
+    public void addStore(MyStore mStore) {
+        this.myStore = mStore;
     }
 }

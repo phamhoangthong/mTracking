@@ -59,6 +59,7 @@ class MyGLSurfaceView extends GLSurfaceView {
     private Handler mHandler;
     private int count = 0;
 
+
     public MyGLSurfaceView(Context context) {
         super(context);
         init(context);
@@ -122,6 +123,10 @@ class MyGLSurfaceView extends GLSurfaceView {
             }
         };
 
+    }
+
+    public void setData(MyStore mStore) {
+        this.m_plot.addStore(mStore);
     }
 
     public Handler getHandler() {
