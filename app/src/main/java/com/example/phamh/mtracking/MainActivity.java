@@ -54,6 +54,16 @@ public class MainActivity extends AppCompatActivity {
                     MyDataTranfer myDataTranfer = (MyDataTranfer)inputMessage.obj;
                     if(myDataTranfer.type == IMU.IMU_DATA_ACC) {
                         //Log.i("MY_DEBUG","Haved data acc to plot");
+                        //Double[] mTemp = (Double[])myDataTranfer.data;
+                        //MyDataTranfer mDataTranfer = new MyDataTranfer();
+                        //mDataTranfer.type = 1;
+                        //mDataTranfer.data = mTemp[0];
+                        //Message mgs = mPlotHandler.obtainMessage();
+                        //mgs.obj = mDataTranfer;
+                        //mPlotHandler.sendMessage(mgs);
+                    }
+                    if(myDataTranfer.type == IMU.IMU_DATA_COMP) {
+                        //Log.i("MY_DEBUG","Haved data compass to plot");
                         Double[] mTemp = (Double[])myDataTranfer.data;
                         MyDataTranfer mDataTranfer = new MyDataTranfer();
                         mDataTranfer.type = 1;

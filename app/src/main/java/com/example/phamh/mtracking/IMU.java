@@ -22,7 +22,7 @@ import java.util.ArrayList;
 
 public class IMU {
     public static final int IMU_DATA_ACC = 1;
-    public final int IMU_DATA_ACC_Y = 2;
+    public static final int IMU_DATA_COMP = 2;
     public final int IMU_DATA_ACC_Z = 3;
     private static final int RAW_DATA_ACC = 1000;
     private static final int RAW_DATA_COMP = 1001;
@@ -86,11 +86,12 @@ public class IMU {
         private FloatBuffer m_data;
         private int m_size;
         private float m_value;
+        private float m_delta;
         public FilterMean() {
 
         }
 
-        public void init(int m_size) {
+        public void init(int m_size , float delta) {
             this.m_size = m_size;
             ByteBuffer tbb = ByteBuffer.allocateDirect(m_size * Float.BYTES);
             tbb.order(ByteOrder.nativeOrder());
@@ -100,6 +101,7 @@ public class IMU {
             }
             m_data.position(0);
             m_value = 0.0f;
+            m_delta = delta;
         }
 
         public float filter(float input) {
@@ -114,7 +116,7 @@ public class IMU {
             m_data.put(m_size-1,input);
             m_return += input;
             m_return = m_return/((float)m_size);
-            if(Math.abs(m_return - m_value) > 0.05f) {
+            if(Math.abs(m_return - m_value) > m_delta) {
                 m_value = m_return;
                 return m_return;
             } else {
@@ -143,9 +145,6 @@ public class IMU {
                     //Log.i("MY_DEBUG","Have data acc");
                     Double[] mTemp = (Double[])myDataTranfer.data;
                     if(mTemp.length == 3) {
-                        rawDataAcc[0] = mTemp[0];
-                        rawDataAcc[1] = mTemp[1];
-                        rawDataAcc[2] = mTemp[2];
                         myStore.push("RAW_ACC_X", (float)mTemp[0].doubleValue());
                         myStore.push("RAW_ACC_Y", (float)mTemp[1].doubleValue());
                         myStore.push("RAW_ACC_Z", (float)mTemp[2].doubleValue());
@@ -166,20 +165,25 @@ public class IMU {
                 } else if(myDataTranfer.type == RAW_DATA_COMP) {
                     Double[] mTemp = (Double[])myDataTranfer.data;
                     if(mTemp.length == 3) {
-                        rawDataComp[0] = mTemp[0];
-                        rawDataComp[1] = mTemp[1];
-                        rawDataComp[2] = mTemp[2];
                         myStore.push("RAW_COMP_X", (float)mTemp[0].doubleValue());
                         myStore.push("RAW_COMP_Y", (float)mTemp[1].doubleValue());
                         myStore.push("RAW_COMP_Z", (float)mTemp[2].doubleValue());
+                        myStore.push("COMP_X" , filterCompX.filter((float)mTemp[0].doubleValue()));
+                        myStore.push("COMP_Y" , filterCompY.filter((float)mTemp[1].doubleValue()));
+                        myStore.push("COMP_Z" , filterCompZ.filter((float)mTemp[2].doubleValue()));
+                        if(mHandlerTranferData != null) {
+                            MyDataTranfer m_data = new MyDataTranfer();
+                            m_data.type = IMU_DATA_COMP;
+                            m_data.data = mTemp;
+                            Message msg = mHandlerTranferData.obtainMessage();
+                            msg.obj = m_data;
+                            mHandlerTranferData.sendMessage(msg);
+                        }
                         //Log.i("MY_COMP", String.format("X = %2.3f - Y = %2.3f - Z = %2.3f",rawDataComp[0],rawDataComp[1],rawDataComp[2]));
                     }
                 } else if(myDataTranfer.type == RAW_DATA_GYRO) {
                     Double[] mTemp = (Double[])myDataTranfer.data;
                     if(mTemp.length == 3) {
-                        rawDataGyro[0] = mTemp[0];
-                        rawDataGyro[1] = mTemp[1];
-                        rawDataGyro[2] = mTemp[2];
                         myStore.push("RAW_GYRO_X", (float)mTemp[0].doubleValue());
                         myStore.push("RAW_GYRO_Y", (float)mTemp[1].doubleValue());
                         myStore.push("RAW_GYRO_Z", (float)mTemp[2].doubleValue());
@@ -195,6 +199,9 @@ public class IMU {
     private FilterMean filterAccX;
     private FilterMean filterAccY;
     private FilterMean filterAccZ;
+    private FilterMean filterCompX;
+    private FilterMean filterCompY;
+    private FilterMean filterCompZ;
 
     public IMU(Context mContext, final Handler mHander, MyStore mStore) {
         this.mHandlerTranferData = mHander;
@@ -207,9 +214,15 @@ public class IMU {
         filterAccX = new FilterMean();
         filterAccY = new FilterMean();
         filterAccZ = new FilterMean();
-        filterAccX.init(10);
-        filterAccY.init(10);
-        filterAccZ.init(10);
+        filterCompX = new FilterMean();
+        filterCompY = new FilterMean();
+        filterCompZ = new FilterMean();
+        filterAccX.init(10,0.05f);
+        filterAccY.init(10,0.05f);
+        filterAccZ.init(10,0.05f);
+        filterCompX.init(10,1.0f);
+        filterCompY.init(10,1.0f);
+        filterCompZ.init(10,1.0f);
 
         sensorManager = (SensorManager) mContext.getSystemService(Context.SENSOR_SERVICE);
         mAcc = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
