@@ -60,9 +60,12 @@ public class MyPlot {
         gl.glTranslatef(0, 0, - axis_z);
         gl.glScalef(axis_z,axis_z,1.0f);
         drawAxisGridPlot2D(gl,0.1f,0.1f, 1.0f,1.0f,1.0f);
-        drawChannelPlot2D(gl,myStore.getData("RAW_ACC_X"),1.0f,0.0f,1.0f,0.0f,0.0f,0.5f);
-        drawChannelPlot2D(gl,myStore.getData("RAW_ACC_Y"),1.0f,0.0f,0.0f,1.0f,0.0f,0.5f);
-        drawChannelPlot2D(gl,myStore.getData("RAW_ACC_Z"),0.1f,0.0f,0.0f,0.0f,1.0f,0.5f);
+        drawChannelPlot2D(gl,myStore.getData("RAW_ACC_X"),1.0f,0.0f,0.5f,0.15f,0.15f,0.5f);
+        drawChannelPlot2D(gl,myStore.getData("RAW_ACC_Y"),1.0f,0.0f,0.15f,0.5f,0.15f,0.5f);
+        drawChannelPlot2D(gl,myStore.getData("RAW_ACC_Z"),0.1f,0.0f,0.15f,0.15f,0.5f,0.5f);
+        drawChannelPlot2D(gl,myStore.getData("ACC_X"),1.0f,0.0f,1.0f,0.0f,0.0f,1.0f);
+        drawChannelPlot2D(gl,myStore.getData("ACC_Y"),1.0f,0.0f,0.0f,1.0f,0.0f,1.0f);
+        drawChannelPlot2D(gl,myStore.getData("ACC_Z"),0.1f,0.0f,0.0f,0.0f,1.0f,1.0f);
         //drawChannelPlot2D(gl,myStore.getData("RAW_ACC_Z"),0.0f,0.0f,1.0f,0.5f);
         //Log.i("MY_DEBUG", "finish draw plot");
         gl.glPopMatrix();

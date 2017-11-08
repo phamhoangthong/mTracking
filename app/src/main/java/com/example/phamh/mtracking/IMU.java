@@ -14,6 +14,7 @@ import android.util.Log;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 
 /**
  * Created by phamh on 11/1/2017.
@@ -81,21 +82,46 @@ public class IMU {
         }
     };
 
-    /*private class FilterMean {
+    private class FilterMean {
+        private FloatBuffer m_data;
+        private int m_size;
+        private float m_value;
         public FilterMean() {
 
         }
 
-        public float filter(FloatBuffer input, FloatBuffer output, int size_filter) {
-            int index_input = input.position();
-            int index_output = output.position();
-            if(index_input >= size_filter) {
+        public void init(int m_size) {
+            this.m_size = m_size;
+            ByteBuffer tbb = ByteBuffer.allocateDirect(m_size * Float.BYTES);
+            tbb.order(ByteOrder.nativeOrder());
+            m_data = tbb.asFloatBuffer();
+            for(int i = 0; i < m_size; i++) {
+                m_data.put(0.0f);
+            }
+            m_data.position(0);
+            m_value = 0.0f;
+        }
 
+        public float filter(float input) {
+            float m_return;
+            float m_temp;
+            m_return = 0;
+            for(int i = 0; i < (m_size-1); i++) {
+                m_temp = m_data.get(i+1);
+                m_return += m_temp;
+                m_data.put(i,m_temp);
+            }
+            m_data.put(m_size-1,input);
+            m_return += input;
+            m_return = m_return/((float)m_size);
+            if(Math.abs(m_return - m_value) > 0.05f) {
+                m_value = m_return;
+                return m_return;
             } else {
-                
+                return m_value;
             }
         }
-    }*/
+    }
 
     private Handler mHandlerTranferData;
     private Context mContext;
@@ -123,6 +149,9 @@ public class IMU {
                         myStore.push("RAW_ACC_X", (float)mTemp[0].doubleValue());
                         myStore.push("RAW_ACC_Y", (float)mTemp[1].doubleValue());
                         myStore.push("RAW_ACC_Z", (float)mTemp[2].doubleValue());
+                        myStore.push("ACC_X" , filterAccX.filter((float)mTemp[0].doubleValue()));
+                        myStore.push("ACC_Y" , filterAccY.filter((float)mTemp[1].doubleValue()));
+                        myStore.push("ACC_Z" , filterAccZ.filter((float)mTemp[2].doubleValue()));
                         //Log.i("MY_DEBUG","Pushed data acc");
                         if(mHandlerTranferData != null) {
                             MyDataTranfer m_data = new MyDataTranfer();
@@ -161,7 +190,12 @@ public class IMU {
         }
     };
 
-    ReadRawSensor readRawSensor;
+    private ReadRawSensor readRawSensor;
+
+    private FilterMean filterAccX;
+    private FilterMean filterAccY;
+    private FilterMean filterAccZ;
+
     public IMU(Context mContext, final Handler mHander, MyStore mStore) {
         this.mHandlerTranferData = mHander;
         this.mContext = mContext;
@@ -170,6 +204,12 @@ public class IMU {
         rawDataAcc = new Double[3];
         rawDataComp = new Double[3];
         rawDataGyro = new Double[3];
+        filterAccX = new FilterMean();
+        filterAccY = new FilterMean();
+        filterAccZ = new FilterMean();
+        filterAccX.init(10);
+        filterAccY.init(10);
+        filterAccZ.init(10);
 
         sensorManager = (SensorManager) mContext.getSystemService(Context.SENSOR_SERVICE);
         mAcc = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -223,15 +263,15 @@ public class IMU {
 
     public void start() {
         if(mAcc != null) {
-            sensorManager.registerListener(readRawSensor,mAcc,10000,100);
+            sensorManager.registerListener(readRawSensor,mAcc,10000,10);
         }
 
         if(mComp != null) {
-            sensorManager.registerListener(readRawSensor,mComp,10000,100);
+            sensorManager.registerListener(readRawSensor,mComp,10000,10);
         }
 
         if(mGyro != null) {
-            sensorManager.registerListener(readRawSensor,mGyro,10000,100);
+            sensorManager.registerListener(readRawSensor,mGyro,10000,10);
         }
 
     }
