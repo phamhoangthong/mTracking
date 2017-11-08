@@ -9,12 +9,10 @@ import android.hardware.SensorManager;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AlertDialog;
-import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
 
 /**
  * Created by phamh on 11/1/2017.
@@ -23,119 +21,29 @@ import java.util.ArrayList;
 public class IMU {
     public static final int IMU_DATA_ACC = 1;
     public static final int IMU_DATA_COMP = 2;
-    public final int IMU_DATA_ACC_Z = 3;
     private static final int RAW_DATA_ACC = 1000;
     private static final int RAW_DATA_COMP = 1001;
     private static final int RAW_DATA_GYRO = 1002;
     private static final int BUFFER_SIZE = 1000;
     private static final int FILTER_SIZE = 10;
+    public final int IMU_DATA_ACC_Z = 3;
     private MyStore myStore;
-
-    private class ReadRawSensor implements SensorEventListener {
-        private Handler mHander;
-
-        public ReadRawSensor(Handler handler) {
-            this.mHander = handler;
-        }
-
-        @Override
-        public void onSensorChanged(SensorEvent event) {
-            if(event.sensor.equals(mAcc)) {
-                Double[] mTemp = new Double[3];
-                mTemp[0] = (double)event.values[0];
-                mTemp[1] = (double)event.values[1];
-                mTemp[2] = (double)event.values[2];
-                MyDataTranfer myDataTranfer = new MyDataTranfer();
-                myDataTranfer.type = RAW_DATA_ACC;
-                myDataTranfer.data = mTemp;
-                Message message = mHander.obtainMessage();
-                message.obj = myDataTranfer;
-                mHander.sendMessage(message);
-            } else if (event.sensor.equals(mComp)) {
-                Double[] mTemp = new Double[3];
-                mTemp[0] = (double)event.values[0];
-                mTemp[1] = (double)event.values[1];
-                mTemp[2] = (double)event.values[2];
-                MyDataTranfer myDataTranfer = new MyDataTranfer();
-                myDataTranfer.type = RAW_DATA_COMP;
-                myDataTranfer.data = mTemp;
-                Message message = mHander.obtainMessage();
-                message.obj = myDataTranfer;
-                mHander.sendMessage(message);
-            } else if (event.sensor.equals(mGyro)) {
-                Double[] mTemp = new Double[3];
-                mTemp[0] = (double)event.values[0];
-                mTemp[1] = (double)event.values[1];
-                mTemp[2] = (double)event.values[2];
-                MyDataTranfer myDataTranfer = new MyDataTranfer();
-                myDataTranfer.type = RAW_DATA_GYRO;
-                myDataTranfer.data = mTemp;
-                Message message = mHander.obtainMessage();
-                message.obj = myDataTranfer;
-                mHander.sendMessage(message);
-            }
-        }
-
-        @Override
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-        }
-    };
-
-    private class FilterMean {
-        private FloatBuffer m_data;
-        private int m_size;
-        private float m_value;
-        private float m_delta;
-        public FilterMean() {
-
-        }
-
-        public void init(int m_size , float delta) {
-            this.m_size = m_size;
-            ByteBuffer tbb = ByteBuffer.allocateDirect(m_size * Float.BYTES);
-            tbb.order(ByteOrder.nativeOrder());
-            m_data = tbb.asFloatBuffer();
-            for(int i = 0; i < m_size; i++) {
-                m_data.put(0.0f);
-            }
-            m_data.position(0);
-            m_value = 0.0f;
-            m_delta = delta;
-        }
-
-        public float filter(float input) {
-            float m_return;
-            float m_temp;
-            m_return = 0;
-            for(int i = 0; i < (m_size-1); i++) {
-                m_temp = m_data.get(i+1);
-                m_return += m_temp;
-                m_data.put(i,m_temp);
-            }
-            m_data.put(m_size-1,input);
-            m_return += input;
-            m_return = m_return/((float)m_size);
-            if(Math.abs(m_return - m_value) > m_delta) {
-                m_value = m_return;
-                return m_return;
-            } else {
-                return m_value;
-            }
-        }
-    }
-
     private Handler mHandlerTranferData;
     private Context mContext;
     private SensorManager sensorManager;
     private Sensor mAcc;
     private Sensor mComp;
     private Sensor mGyro;
-
     private Double[] rawDataAcc;
     private Double[] rawDataComp;
     private Double[] rawDataGyro;
-
+    private ReadRawSensor readRawSensor;
+    private FilterMean filterAccX;
+    private FilterMean filterAccY;
+    private FilterMean filterAccZ;
+    private FilterMean filterCompX;
+    private FilterMean filterCompY;
+    private FilterMean filterCompZ;
     Handler mHandlerRawSensor = new Handler() {
         @Override
         public void handleMessage(Message inputMessage) {
@@ -148,14 +56,18 @@ public class IMU {
                         myStore.push("RAW_ACC_X", (float)mTemp[0].doubleValue());
                         myStore.push("RAW_ACC_Y", (float)mTemp[1].doubleValue());
                         myStore.push("RAW_ACC_Z", (float)mTemp[2].doubleValue());
-                        myStore.push("ACC_X" , filterAccX.filter((float)mTemp[0].doubleValue()));
-                        myStore.push("ACC_Y" , filterAccY.filter((float)mTemp[1].doubleValue()));
-                        myStore.push("ACC_Z" , filterAccZ.filter((float)mTemp[2].doubleValue()));
+                        Float[] mData = new Float[3];
+                        mData[0] = filterAccX.filter((float) mTemp[0].doubleValue());
+                        mData[1] = filterAccY.filter((float) mTemp[1].doubleValue());
+                        mData[2] = filterAccZ.filter((float) mTemp[2].doubleValue());
+                        myStore.push("ACC_X", mData[0]);
+                        myStore.push("ACC_Y", mData[1]);
+                        myStore.push("ACC_Z", mData[2]);
                         //Log.i("MY_DEBUG","Pushed data acc");
                         if(mHandlerTranferData != null) {
                             MyDataTranfer m_data = new MyDataTranfer();
                             m_data.type = IMU_DATA_ACC;
-                            m_data.data = mTemp;
+                            m_data.data = mData;
                             Message msg = mHandlerTranferData.obtainMessage();
                             msg.obj = m_data;
                             mHandlerTranferData.sendMessage(msg);
@@ -168,13 +80,17 @@ public class IMU {
                         myStore.push("RAW_COMP_X", (float)mTemp[0].doubleValue());
                         myStore.push("RAW_COMP_Y", (float)mTemp[1].doubleValue());
                         myStore.push("RAW_COMP_Z", (float)mTemp[2].doubleValue());
-                        myStore.push("COMP_X" , filterCompX.filter((float)mTemp[0].doubleValue()));
-                        myStore.push("COMP_Y" , filterCompY.filter((float)mTemp[1].doubleValue()));
-                        myStore.push("COMP_Z" , filterCompZ.filter((float)mTemp[2].doubleValue()));
+                        Float[] mData = new Float[3];
+                        mData[0] = filterCompX.filter((float) mTemp[0].doubleValue());
+                        mData[1] = filterCompY.filter((float) mTemp[1].doubleValue());
+                        mData[2] = filterCompZ.filter((float) mTemp[2].doubleValue());
+                        myStore.push("COMP_X", mData[0]);
+                        myStore.push("COMP_Y", mData[1]);
+                        myStore.push("COMP_Z", mData[2]);
                         if(mHandlerTranferData != null) {
                             MyDataTranfer m_data = new MyDataTranfer();
                             m_data.type = IMU_DATA_COMP;
-                            m_data.data = mTemp;
+                            m_data.data = mData;
                             Message msg = mHandlerTranferData.obtainMessage();
                             msg.obj = m_data;
                             mHandlerTranferData.sendMessage(msg);
@@ -193,16 +109,6 @@ public class IMU {
             }
         }
     };
-
-    private ReadRawSensor readRawSensor;
-
-    private FilterMean filterAccX;
-    private FilterMean filterAccY;
-    private FilterMean filterAccZ;
-    private FilterMean filterCompX;
-    private FilterMean filterCompY;
-    private FilterMean filterCompZ;
-
     public IMU(Context mContext, final Handler mHander, MyStore mStore) {
         this.mHandlerTranferData = mHander;
         this.mContext = mContext;
@@ -291,5 +197,100 @@ public class IMU {
 
     public void stop(){
         sensorManager.unregisterListener(readRawSensor);
+    }
+
+    private class ReadRawSensor implements SensorEventListener {
+        private Handler mHander;
+
+        public ReadRawSensor(Handler handler) {
+            this.mHander = handler;
+        }
+
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            if (event.sensor.equals(mAcc)) {
+                Double[] mTemp = new Double[3];
+                mTemp[0] = (double) event.values[0];
+                mTemp[1] = (double) event.values[1];
+                mTemp[2] = (double) event.values[2];
+                MyDataTranfer myDataTranfer = new MyDataTranfer();
+                myDataTranfer.type = RAW_DATA_ACC;
+                myDataTranfer.data = mTemp;
+                Message message = mHander.obtainMessage();
+                message.obj = myDataTranfer;
+                mHander.sendMessage(message);
+            } else if (event.sensor.equals(mComp)) {
+                Double[] mTemp = new Double[3];
+                mTemp[0] = (double) event.values[0];
+                mTemp[1] = (double) event.values[1];
+                mTemp[2] = (double) event.values[2];
+                MyDataTranfer myDataTranfer = new MyDataTranfer();
+                myDataTranfer.type = RAW_DATA_COMP;
+                myDataTranfer.data = mTemp;
+                Message message = mHander.obtainMessage();
+                message.obj = myDataTranfer;
+                mHander.sendMessage(message);
+            } else if (event.sensor.equals(mGyro)) {
+                Double[] mTemp = new Double[3];
+                mTemp[0] = (double) event.values[0];
+                mTemp[1] = (double) event.values[1];
+                mTemp[2] = (double) event.values[2];
+                MyDataTranfer myDataTranfer = new MyDataTranfer();
+                myDataTranfer.type = RAW_DATA_GYRO;
+                myDataTranfer.data = mTemp;
+                Message message = mHander.obtainMessage();
+                message.obj = myDataTranfer;
+                mHander.sendMessage(message);
+            }
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+        }
+    }
+
+    private class FilterMean {
+        private FloatBuffer m_data;
+        private int m_size;
+        private float m_value;
+        private float m_delta;
+
+        public FilterMean() {
+
+        }
+
+        public void init(int m_size, float delta) {
+            this.m_size = m_size;
+            ByteBuffer tbb = ByteBuffer.allocateDirect(m_size * Float.BYTES);
+            tbb.order(ByteOrder.nativeOrder());
+            m_data = tbb.asFloatBuffer();
+            for (int i = 0; i < m_size; i++) {
+                m_data.put(0.0f);
+            }
+            m_data.position(0);
+            m_value = 0.0f;
+            m_delta = delta;
+        }
+
+        public float filter(float input) {
+            float m_return;
+            float m_temp;
+            m_return = 0;
+            for (int i = 0; i < (m_size - 1); i++) {
+                m_temp = m_data.get(i + 1);
+                m_return += m_temp;
+                m_data.put(i, m_temp);
+            }
+            m_data.put(m_size - 1, input);
+            m_return += input;
+            m_return = m_return / ((float) m_size);
+            if (Math.abs(m_return - m_value) > m_delta) {
+                m_value = m_return;
+                return m_return;
+            } else {
+                return m_value;
+            }
+        }
     }
 }

@@ -1,57 +1,18 @@
 package com.example.phamh.mtracking;
 
-import android.app.ActivityManager;
 import android.content.Context;
-import android.content.pm.ConfigurationInfo;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLU;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
-import android.util.Log;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
 
 import javax.microedition.khronos.opengles.GL10;
 
 /**
  * Created by phamh on 11/1/2017.
  */
-
-public class MyGLView {
-
-    private Context mContext;
-    private LinearLayout  mLayout;
-    private GLSurfaceView mGLView;
-
-    private boolean hasGLES20() {
-        ActivityManager am = (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE);
-        ConfigurationInfo info = am.getDeviceConfigurationInfo();
-        return info.reqGlEsVersion >= 0x20000;
-    }
-
-    public MyGLView (Context context, LinearLayout layout) {
-        this.mContext = context;
-        this.mLayout = layout;
-        if(hasGLES20()) {
-            Log.i("MY_DEBUG", "Have GLES 2.0");
-        } else {
-            Log.i("MY_DEBUG", "Haven't GLES 2.0");
-        }
-        mGLView = new GLSurfaceView(mContext);
-        mLayout.addView(mGLView,new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-    }
-
-    public void onResume() {
-        mGLView.onResume();
-    }
-
-    public void onPause() {
-        mGLView.onPause();
-    }
-}
-
 class MyGLSurfaceView extends GLSurfaceView {
     private MyRender m_renderer;
     private MyPlot m_plot;
@@ -73,7 +34,7 @@ class MyGLSurfaceView extends GLSurfaceView {
         m_renderer = new MyRender() {
             @Override
             public void onCreate(GL10 gl) {
-                GLES20.glClearColor(0f, 0.0f, 0.0f, 1f);
+                GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1f);
                 gl.glShadeModel(GL10.GL_SMOOTH);
                 gl.glClearDepthf(1.0f);
                 gl.glDepthFunc(GL10.GL_LEQUAL);
