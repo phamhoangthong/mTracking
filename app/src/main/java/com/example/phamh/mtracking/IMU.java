@@ -44,6 +44,11 @@ public class IMU {
     private FilterMean filterCompX;
     private FilterMean filterCompY;
     private FilterMean filterCompZ;
+
+    private static float acc_offset_x = 0.4f;
+    private static float acc_offset_y = 0.4f;
+    private static float acc_offset_z = 0.0f;
+
     Handler mHandlerRawSensor = new Handler() {
         @Override
         public void handleMessage(Message inputMessage) {
@@ -53,13 +58,13 @@ public class IMU {
                     //Log.i("MY_DEBUG","Have data acc");
                     Double[] mTemp = (Double[])myDataTranfer.data;
                     if(mTemp.length == 3) {
-                        myStore.push("RAW_ACC_X", (float)mTemp[0].doubleValue());
-                        myStore.push("RAW_ACC_Y", (float)mTemp[1].doubleValue());
-                        myStore.push("RAW_ACC_Z", (float)mTemp[2].doubleValue());
+                        myStore.push("RAW_ACC_X", (float)mTemp[0].doubleValue() + acc_offset_x);
+                        myStore.push("RAW_ACC_Y", (float)mTemp[1].doubleValue() + acc_offset_y);
+                        myStore.push("RAW_ACC_Z", (float)mTemp[2].doubleValue() + acc_offset_z);
                         Float[] mData = new Float[3];
-                        mData[0] = filterAccX.filter((float) mTemp[0].doubleValue());
-                        mData[1] = filterAccY.filter((float) mTemp[1].doubleValue());
-                        mData[2] = filterAccZ.filter((float) mTemp[2].doubleValue());
+                        mData[0] = filterAccX.filter((float)mTemp[0].doubleValue() + acc_offset_x);
+                        mData[1] = filterAccY.filter((float)mTemp[1].doubleValue() + acc_offset_y);
+                        mData[2] = filterAccZ.filter((float)mTemp[2].doubleValue() + acc_offset_z);
                         myStore.push("ACC_X", mData[0]);
                         myStore.push("ACC_Y", mData[1]);
                         myStore.push("ACC_Z", mData[2]);
@@ -123,12 +128,12 @@ public class IMU {
         filterCompX = new FilterMean();
         filterCompY = new FilterMean();
         filterCompZ = new FilterMean();
-        filterAccX.init(10,0.05f);
-        filterAccY.init(10,0.05f);
-        filterAccZ.init(10,0.05f);
-        filterCompX.init(10,1.0f);
-        filterCompY.init(10,1.0f);
-        filterCompZ.init(10,1.0f);
+        filterAccX.init(10);
+        filterAccY.init(10);
+        filterAccZ.init(10);
+        filterCompX.init(10);
+        filterCompY.init(10);
+        filterCompZ.init(10);
 
         sensorManager = (SensorManager) mContext.getSystemService(Context.SENSOR_SERVICE);
         mAcc = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -253,14 +258,12 @@ public class IMU {
     private class FilterMean {
         private FloatBuffer m_data;
         private int m_size;
-        private float m_value;
-        private float m_delta;
 
         public FilterMean() {
 
         }
 
-        public void init(int m_size, float delta) {
+        public void init(int m_size) {
             this.m_size = m_size;
             ByteBuffer tbb = ByteBuffer.allocateDirect(m_size * Float.BYTES);
             tbb.order(ByteOrder.nativeOrder());
@@ -269,8 +272,6 @@ public class IMU {
                 m_data.put(0.0f);
             }
             m_data.position(0);
-            m_value = 0.0f;
-            m_delta = delta;
         }
 
         public float filter(float input) {
@@ -285,12 +286,8 @@ public class IMU {
             m_data.put(m_size - 1, input);
             m_return += input;
             m_return = m_return / ((float) m_size);
-            if (Math.abs(m_return - m_value) > m_delta) {
-                m_value = m_return;
-                return m_return;
-            } else {
-                return m_value;
-            }
+            m_return = (float)Math.round(m_return*100)/100.0f;
+            return m_return;
         }
     }
 }
